@@ -12,6 +12,11 @@ def validate_audit_id(audit_id: str) -> str:
     return audit_id
 
 
+def audit_attribute(audit_id: str) -> str:
+    """Compatibility alias for the audit-reference validator."""
+    return validate_audit_id(audit_id)
+
+
 def credentials_from_wif(
     config_path: str,
     *,
