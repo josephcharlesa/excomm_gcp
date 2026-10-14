@@ -17,6 +17,15 @@ def to_json(report: Any) -> str:
     return json.dumps(report.to_dict(), indent=2, ensure_ascii=False, default=str)
 
 
+def _csv_cell(value: Any) -> Any:
+    """Neutralize spreadsheet formulas in resource-controlled text fields."""
+    if value is None:
+        return ""
+    if isinstance(value, str) and value[:1] in ("=", "+", "-", "@", "\\t", "\\r"):
+        return "'" + value
+    return value
+
+
 def to_csv(report: Any) -> str:
     output = io.StringIO(newline="")
     writer = csv.writer(output, lineterminator="\n")
@@ -26,12 +35,12 @@ def to_csv(report: Any) -> str:
         "evidence", "source",
     ])
     for finding in report.findings:
-        writer.writerow([
+        writer.writerow([_csv_cell(value) for value in (
             finding.category, finding.severity, finding.resource_id,
             finding.current_monthly_cost, finding.estimated_monthly_savings,
             finding.currency, finding.confidence, finding.recommendation,
             finding.evidence, finding.source,
-        ])
+        )])
     return output.getvalue()
 
 
