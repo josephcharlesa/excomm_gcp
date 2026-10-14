@@ -1,5 +1,8 @@
 from pathlib import Path
 from types import SimpleNamespace
+import csv
+
+import pytest
 
 from exaudit.gcp.findings import FindingRecord
 from exaudit.gcp.reporting import to_csv, to_html, write_bundle
@@ -42,19 +45,27 @@ def test_gcp_html_escapes_resource_ids_and_notes():
 def test_gcp_csv_includes_null_costs_as_empty_cells():
     output = to_csv(make_report())
     assert "resource_id" in output
-    import csv
     header = next(csv.reader(output.splitlines()))
     row = next(csv.reader(output.splitlines()[1:]))
     assert row[header.index("resource_id")] == 'bucket-<script>alert("x")</script>'
     assert "None" not in output
 
 
-def test_gcp_csv_neutralizes_spreadsheet_formulas():
-    import csv
+@pytest.mark.parametrize("payload", [
+    '=HYPERLINK("https://example.invalid")',
+    '+1+1',
+    '-2+3',
+    '@SUM(A1:A2)',
+    '\t=1+1',
+    '\r=1+1',
+    '  =1+1',
+    '\n@SUM(A1:A2)',
+])
+def test_gcp_csv_neutralizes_spreadsheet_formula_prefixes(payload):
     report = make_report()
-    report.findings[0].resource_id = '=HYPERLINK("https://example.invalid")'
+    report.findings[0].resource_id = payload
     row = next(csv.reader(to_csv(report).splitlines()[1:]))
-    assert row[2].startswith("'=HYPERLINK(")
+    assert row[2].startswith("'")
 
 
 def test_gcp_bundle_never_generates_aws_cleanup_scripts(tmp_path: Path):
