@@ -19,10 +19,13 @@ A read-only Google Cloud inventory and cost-audit module intended to align with 
 - Keep tokens short-lived and never log tokens or credential material.
 - Treat findings as recommendations only; the scanner does not modify customer resources.
 
-## Status
+## Validation status
 
-Initial repository setup. The MVP source, mocked tests, and architecture notes are to be added and validated before production use. Live GCP validation is required before calling this production-ready.
+- GitHub Actions unit tests pass on Python 3.10, 3.11, and 3.12.
+- Tests use mocked Google API clients and do not access a live GCP project.
+- This is an MVP, not production-ready: WIF trust/IAM setup, billing-export schema variations, recommendation coverage, and integration with the existing AWS CLI/report pipeline still require validation.
 
 ## Development
 
-Install the package with the `gcp` optional dependencies and run the test suite with pytest once the implementation and tests are committed.
+Install development dependencies with `python -m pip install -e '.[dev]'` and run `python -m pytest -q`.
+Install GCP runtime dependencies as well with `python -m pip install -e '.[dev,gcp]'`.
