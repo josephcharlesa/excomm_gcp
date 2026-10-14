@@ -50,6 +50,22 @@ class PagedCompute:
         return self.address_pages
 
 
+class BrokenCollection:
+    def aggregatedList(self, **kwargs):
+        raise PermissionError("permission denied")
+
+
+class FaultyCompute:
+    def instances(self):
+        return BrokenCollection()
+
+    def disks(self):
+        return PagedCollection([{"items": {}}])
+
+    def addresses(self):
+        return PagedCollection([{"items": {}}])
+
+
 class NoopClient:
     def buckets(self):
         return type("Buckets", (), {"list": lambda self, **kwargs: PagedRequest({"items": []})})()
@@ -75,10 +91,7 @@ class InjectedClients:
 
     def client(self, name):
         if name in self.clients:
-            value = self.clients[name]
-            if isinstance(value, Exception):
-                raise value
-            return value
+            return self.clients[name]
         return NoopClient()
 
 
@@ -97,13 +110,13 @@ def test_compute_scanner_follows_next_page_token():
     assert compute.instance_pages.tokens_seen == [None, "next-page"]
 
 
-def test_compute_api_failure_is_recorded_without_crashing_other_checks():
+def test_compute_collection_failure_is_recorded_and_other_collections_continue():
     scanner = GcpScanner(
-        InjectedClients(compute=RuntimeError("permission denied")),
+        InjectedClients(compute=FaultyCompute()),
         ScanConfig(project_id="demo", audit_id="audit-123"),
     )
 
     scanner.scan_compute()
 
-    assert any(note["check"] == "compute" and "RuntimeError" in note["message"]
+    assert any(note["check"] == "compute" and "PermissionError" in note["message"]
                for note in scanner.report.notes)
