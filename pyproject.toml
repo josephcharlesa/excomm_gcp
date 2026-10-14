@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "excomm-gcp"
+version = "0.1.0"
+description = "Read-only Google Cloud cost and infrastructure audit scanner"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+gcp = ["google-auth>=2.30", "google-api-python-client>=2.130", "google-cloud-bigquery>=3.25"]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
