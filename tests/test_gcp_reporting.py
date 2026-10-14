@@ -42,8 +42,19 @@ def test_gcp_html_escapes_resource_ids_and_notes():
 def test_gcp_csv_includes_null_costs_as_empty_cells():
     output = to_csv(make_report())
     assert "resource_id" in output
-    assert 'bucket-<script>alert("x")</script>' in output
-    assert ",,,," in output or "None" not in output
+    import csv
+    header = next(csv.reader(output.splitlines()))
+    row = next(csv.reader(output.splitlines()[1:]))
+    assert row[header.index("resource_id")] == 'bucket-<script>alert("x")</script>'
+    assert "None" not in output
+
+
+def test_gcp_csv_neutralizes_spreadsheet_formulas():
+    import csv
+    report = make_report()
+    report.findings[0].resource_id = '=HYPERLINK("https://example.invalid")'
+    row = next(csv.reader(to_csv(report).splitlines()[1:]))
+    assert row[2].startswith("'=HYPERLINK(")
 
 
 def test_gcp_bundle_never_generates_aws_cleanup_scripts(tmp_path: Path):
