@@ -18,11 +18,15 @@ def to_json(report: Any) -> str:
 
 
 def _csv_cell(value: Any) -> Any:
-    """Neutralize spreadsheet formulas in resource-controlled text fields."""
+    """Neutralize spreadsheet formulas and control-character prefixes."""
     if value is None:
         return ""
-    if isinstance(value, str) and value[:1] in ("=", "+", "-", "@", "\\t", "\\r"):
-        return "'" + value
+    if isinstance(value, str):
+        # Excel-like spreadsheet apps may interpret formulas after leading
+        # whitespace. Tabs and carriage returns can also be formula triggers.
+        stripped = value.lstrip(" \t\r\n")
+        if value[:1] in ("=", "+", "-", "@", "\t", "\r") or stripped[:1] in ("=", "+", "-", "@"):
+            return "'" + value
     return value
 
 
